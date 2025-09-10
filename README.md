@@ -1,4 +1,4 @@
-# Wildfire_Detection
+# Wildfire Detection by Fine-Tuning Remote Sensing Foundation Models
 
 Simple overview of use/purpose.
 
