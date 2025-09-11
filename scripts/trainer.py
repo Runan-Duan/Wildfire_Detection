@@ -6,15 +6,15 @@ def dice_loss(outputs, targets):
     num_classes=2
     probs = F.softmax(outputs[0], dim=1)  # Compute prob across number of classes
 
-    if probs.shape[2:] != targets.shape[1:]:
-        probs = F.interpolate(probs, size=targets.shape[1:], mode='bilinear', align_corners=False)
+    # if probs.shape[2:] != targets.shape[1:]:
+    #     probs = F.interpolate(probs, size=targets.shape[1:], mode='bilinear', align_corners=False)
 
     # One-hot encoding with tensor shape (N, C, H, W)
     targets_one_hot = F.one_hot(targets, num_classes).permute(0, 3, 1, 2).float().to(targets.device)
 
 
     dims = (0, 2, 3)
-    epsilon = 1e-6
+    epsilon = 1e-7
     # Compute dice for fire area and background
     intersection = torch.sum(probs * targets_one_hot, dim=dims)
     cardinality = torch.sum(probs + targets_one_hot, dim=dims)
@@ -32,9 +32,7 @@ def dice_loss(outputs, targets):
     weighted_dice = torch.sum(dice_per_class * weights)
     weighted_iou = torch.sum(iou_per_class * weights) / weights.sum()
 
-    log_cosh_loss = torch.log(torch.cosh(1.0 - weighted_dice))
-
-    return log_cosh_loss, weighted_dice, weighted_iou
+    return 1.0 - weighted_dice, weighted_dice, weighted_iou
 
 
 def train(model, train_dataloader, optimizer, criterion, device):

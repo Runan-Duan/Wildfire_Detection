@@ -13,10 +13,11 @@ import rasterio as rio
 
 import torch.optim as optim
 import torch.nn.functional as F
-from torchvision.models import vit_b_32
+from transformers import ViTModel
 
 from dataset import FireDataset, split_dataset
 from trainer import train, test, run, dice_loss
+from segViT import SegViT
 
 
 def main():
@@ -27,22 +28,28 @@ def main():
     parser.add_argument('--batch_size', default=8, type=int)
     parser.add_argument('--num_workers', default=4, type=int)
     parser.add_argument('--model_path', default="test_model.pth", type=str)
-    parser.add_argument('--lr', default=1e-5, type=float)
+    parser.add_argument('--lr', default=1e-4, type=float)
     parser.add_argument('--epochs', default=10, type=int)
     parser.add_argument("--multispectral", action="store_true")
+    parser.add_argument("--model", choices=["SwinB_MS", "SwinB_RGB", "ViT"], default="ViT", type=str)
 
     args = parser.parse_args()
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    if args.model == "ViT":
+        use_vit = True
+    else:
+        use_vit = False
 
     ## Create dataloader
     train_data, val_data, test_data = split_dataset(img_dir=args.img_dir, num_datapoints=args.num_data)
+
     transform = transforms.Compose([
                 transforms.RandomCrop(224, padding=4),
                 ])
-    train_dataset = FireDataset(img_dir=args.img_dir, mask_dir=args.mask_dir, img_list=train_data, transforms=transform, multispectral=args.multispectral)
-    val_dataset = FireDataset(img_dir=args.img_dir, mask_dir=args.mask_dir, img_list=val_data, transforms=transform, multispectral=args.multispectral)
-    test_dataset = FireDataset(img_dir=args.img_dir, mask_dir=args.mask_dir, img_list=test_data, transforms=transform, multispectral=args.multispectral)
+    train_dataset = FireDataset(img_dir=args.img_dir, mask_dir=args.mask_dir, img_list=train_data, transforms=transform, multispectral=args.multispectral, vit=use_vit)
+    val_dataset = FireDataset(img_dir=args.img_dir, mask_dir=args.mask_dir, img_list=val_data, transforms=transform, multispectral=args.multispectral, vit=use_vit)
+    test_dataset = FireDataset(img_dir=args.img_dir, mask_dir=args.mask_dir, img_list=test_data, transforms=transform, multispectral=args.multispectral, vit=use_vit)
 
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
@@ -50,20 +57,28 @@ def main():
     
     # Initialize weights
     weights_manager = satlaspretrain_models.Weights()
-    if args.multispectral:
+    if args.model == "SwinB_MS":
         # The pretrained model on Sentinel-2, Choose segmentation head for binary classes, Load backbone + FPN
         model = weights_manager.get_pretrained_model(model_identifier="Sentinel2_SwinB_SI_MS",
                                                     fpn=True,
                                                     num_categories=2,
                                                     head=satlaspretrain_models.Head.SEGMENT,
                                                     device=device).to(device)
-    else:
+    elif args.model == "SwinB_RGB":
         model = weights_manager.get_pretrained_model(model_identifier="Sentinel2_SwinB_SI_RGB",
                                                     fpn=True,
                                                     num_categories=2,
                                                     head=satlaspretrain_models.Head.SEGMENT,
                                                     device=device).to(device)
-
+    else:
+        vit_pretrained = ViTModel.from_pretrained('google/vit-base-patch16-224').to(device)
+        model = SegViT(vit_model=vit_pretrained, 
+                            image_size=224, 
+                            patch_size=16, 
+                            dim=768,
+                            n_classes=2,
+                            device=device)
+        
     optimizer = optim.Adam(model.parameters(), lr = args.lr)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
 
