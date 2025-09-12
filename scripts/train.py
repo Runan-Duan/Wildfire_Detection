@@ -1,24 +1,23 @@
 import os
 import argparse
+
+import random
+
 import torch
 import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
 import torchvision.models as models
-import numpy as np
-import random
-import satlaspretrain_models
-import matplotlib.pyplot as plt
-import rasterio as rio
 
-import torch.optim as optim
-import torch.nn.functional as F
-from transformers import ViTModel
+import rasterio as rio
+import numpy as np
+import matplotlib.pyplot as plt
+import satlaspretrain_models
 
 from dataset import FireDataset, split_dataset
 from trainer import train, test, run, dice_loss
-from segViT import SegViT
-
 
 def main():
     parser = argparse.ArgumentParser(description="Segmentation task on the fire events")

@@ -2,7 +2,7 @@
 
 #### California Fire Perimeter Dataset
 
-Our **California Fire Perimeter** dataset is provided by the California Department of Forestry and Fire Protection and covers fire events from 1950 to 2025. 
+Our[**California Fire Perimeter** dataset](https://gis.data.ca.gov/datasets/CALFIRE-Forestry::california-fire-perimeters-all/explore?location=37.187645%2C-120.227660%2C5.95) is provided by the California Department of Forestry and Fire Protection and covers fire events from 1950 to 2025. 
 
 Each fire event is recorded in detail, including 
 * Fire's name, 

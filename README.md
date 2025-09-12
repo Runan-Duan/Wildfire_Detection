@@ -1,62 +1,60 @@
 # Wildfire Detection by Fine-Tuning Remote Sensing Foundation Models
 
-Simple overview of use/purpose.
+This project fine-tunes models pre-trained on remote sensing data to perform wildfire area segmentation.
 
 ## Description
 
-An in-depth paragraph about your project and overview of use.
+This repository contains code for retrieving satellite imagery, preprocessing data, and fine-tuning foundation models for burned area detection.
+
+* Data Examples: A small example dataset (20 samples) is provided to run through the notebooks and train models for a few epochs.
+![Data Examples](image.png)
+
+* Data Acquisition: The retrieval process for the [California Fire Perimeter Dataset](https://gis.data.ca.gov/datasets/CALFIRE-Forestry::california-fire-perimeters-all/explore?location=37.187645%2C-120.227660%2C5.95) and [Harmonized Sentinel-2 MSI: MultiSpectral Instrument, Level-2A (SR)](https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED#description) is documented in [here](docs/data_acquisition.md).
+
+* Notebooks: The provided Jupyter notebooks offer detailed explanations and code for:
+
+- Retrieving data from GeoJSON and satellite imagery.
+
+- Data preprocessing (cloud masking, band selection).
+
+- Dataset preparation for deep learning.
+
+- Model training and evaluation.
+
+* Training: Models were trained on GPU. The complete training scripts are located in the scripts folder. We fine-tuned models on both RGB and multi-spectral images for 30 epochs. Training logs are available in the logs folder.
+
 
 ## Getting Started
 
-### Dependencies
+### Installation
+#### 1. Clone the Repository
 
-* Describe any prerequisites, libraries, OS version, etc., needed before installing program.
-* ex. Windows 10
-
-### Installing
-
-* How/where to download your program
-* Any modifications needed to be made to files/folders
-
-### Executing program
-
-* How to run the program
-* Step-by-step bullets
 ```
-code blocks for commands
+git clone https://github.com/Runan-Duan/Wildfire_Detection.git
+```
+#### 2. Set Up the Python Environment
+All required dependencies are listed in the environment.yml file. Create the Conda environment using:
+```
+conda env create -f environment.yml
+conda activate wildfire-detection 
 ```
 
-## Help
+### Execution
 
-Any advise for common problems or issues.
+To train a model on RGB images using the SwinB_RGB architecture:
 ```
-command to run if program contains helper info
+python train.py --batch_size 16 --epochs 30  --num_data 400 --model "SwinB_RGB" 
+```
+To train a model on multi-spectral images using the SwinB_MS architecture:
+
+```
+python train.py --batch_size 16 --epochs 30  --num_data 400 --model "SwinB_MS" --multispectral
 ```
 
 ## Authors
 
-Contributors names and contact info
+Runan, Duan [runan.duan@stud.uni-heidelberg.de](runan.duan@stud.uni-heidelberg.de)
+Sam, Olinger [S.Olinger@stud.uni-heidelberg.de](S.Olinger@stud.uni-heidelberg.de)
 
-ex. Dominique Pizzie  
-ex. [@DomPizzie](https://twitter.com/dompizzie)
-
-## Version History
-
-* 0.2
-    * Various bug fixes and optimizations
-    * See [commit change]() or See [release history]()
-* 0.1
-    * Initial Release
-
-## License
-
-This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details
-
-## Acknowledgments
-
-Inspiration, code snippets, etc.
-* [awesome-readme](https://github.com/matiassingers/awesome-readme)
-* [PurpleBooth](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
-* [dbader](https://github.com/dbader/readme-template)
-* [zenorocha](https://gist.github.com/zenorocha/4526327)
-* [fvcproductions](https://gist.github.com/fvcproductions/1bfc2d4aecb01a834b46)
+## Acknowledgements
+This project was inspired by the lecture "[Geographic Applications of Machine Learning](https://giscience.courses-pages.gistools.geog.uni-heidelberg.de/geographic-applications-of-machine-learning/content/intro.html)" at the Geographical Institute of the University of Heidelberg.
