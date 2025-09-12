@@ -36,14 +36,13 @@ def split_dataset(img_dir, train_ratio = 0.8, val_ratio = 0.1, test_ratio = 0.1,
 ### Process raw images by filling in NaNs, normalizing values, cropping images, and mapping channels
 ### ==============================================================================================
 class FireDataset(Dataset):
-    def __init__(self, img_dir, mask_dir, img_list, transforms, multispectral=False, vit=True):
+    def __init__(self, img_dir, mask_dir, img_list, transforms, multispectral=False):
         super().__init__()
         self.img_dir = img_dir
         self.mask_dir = mask_dir   # 0, 1 unburned or burned
         self.img_list = img_list
         self.transforms = transforms
         self.multispectral = multispectral
-        self.vit = vit
 
     def __len__(self):
         return len(self.img_list)
@@ -96,11 +95,7 @@ class FireDataset(Dataset):
         # Satlas (multi-band) expects [TCI_R, TCI_G, TCI_B, B05, B06, B07, B08, B11, B12]
         # Band order that I saved: [TCI_R, TCI_G, TCI_B, B8, B12]
         H, W = data.shape[1], data.shape[2]
-        
-        if self.vit:
-            TCI_R, TCI_G, TCI_B = data
-        else:
-            TCI_R, TCI_G, TCI_B, B8, B12 = data
+        TCI_R, TCI_G, TCI_B, B8, B12 = data
 
         if self.multispectral:    
             out = np.zeros((9, H, W), dtype=np.float32)
@@ -118,23 +113,15 @@ class FireDataset(Dataset):
         return torch.from_numpy(out).float()
     
     def normalize(self, data):
-        if self.vit:
-            # ViT expects 3-channel RGB with ImageNet normalization
-            rgb = data[:3, :, :] / 255.0  
-            rgb_tensor = torch.from_numpy(rgb).float()
-            norm = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                        std=[0.229, 0.224, 0.225])
-            return norm(rgb_tensor).numpy() 
-        else:
-            # Multispectral: scale each band based on normalization doc
-            norm_data = np.zeros_like(data, dtype=np.float32)
-            for idx in range(data.shape[0]):
-                band = data[idx, :, :]
-                if idx < 3:
-                    norm_band = (band / 255.0).clip(0.0, 1.0)   # RGB
-                else:
-                    norm_band = (band / 8160.0).clip(0.0, 1.0)  # others
-                norm_data[idx] = norm_band
-            return norm_data
+        # Multispectral: scale each band based on normalization doc
+        norm_data = np.zeros_like(data, dtype=np.float32)
+        for idx in range(data.shape[0]):
+            band = data[idx, :, :]
+            if idx < 3:
+                norm_band = (band / 255.0).clip(0.0, 1.0)   # RGB
+            else:
+                norm_band = (band / 8160.0).clip(0.0, 1.0)  # others
+            norm_data[idx] = norm_band
+        return norm_data
 
 

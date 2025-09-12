@@ -31,15 +31,11 @@ def main():
     parser.add_argument('--lr', default=1e-4, type=float)
     parser.add_argument('--epochs', default=10, type=int)
     parser.add_argument("--multispectral", action="store_true")
-    parser.add_argument("--model", choices=["SwinB_MS", "SwinB_RGB", "ViT"], default="ViT", type=str)
+    parser.add_argument("--model", choices=["SwinB_MS", "SwinB_RGB"], default="SwinB_MS", type=str)
 
     args = parser.parse_args()
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    if args.model == "ViT":
-        use_vit = True
-    else:
-        use_vit = False
 
     ## Create dataloader
     train_data, val_data, test_data = split_dataset(img_dir=args.img_dir, num_datapoints=args.num_data)
@@ -47,9 +43,9 @@ def main():
     transform = transforms.Compose([
                 transforms.RandomCrop(224, padding=4),
                 ])
-    train_dataset = FireDataset(img_dir=args.img_dir, mask_dir=args.mask_dir, img_list=train_data, transforms=transform, multispectral=args.multispectral, vit=use_vit)
-    val_dataset = FireDataset(img_dir=args.img_dir, mask_dir=args.mask_dir, img_list=val_data, transforms=transform, multispectral=args.multispectral, vit=use_vit)
-    test_dataset = FireDataset(img_dir=args.img_dir, mask_dir=args.mask_dir, img_list=test_data, transforms=transform, multispectral=args.multispectral, vit=use_vit)
+    train_dataset = FireDataset(img_dir=args.img_dir, mask_dir=args.mask_dir, img_list=train_data, transforms=transform, multispectral=args.multispectral)
+    val_dataset = FireDataset(img_dir=args.img_dir, mask_dir=args.mask_dir, img_list=val_data, transforms=transform, multispectral=args.multispectral)
+    test_dataset = FireDataset(img_dir=args.img_dir, mask_dir=args.mask_dir, img_list=test_data, transforms=transform, multispectral=args.multispectral)
 
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
@@ -71,13 +67,7 @@ def main():
                                                     head=satlaspretrain_models.Head.SEGMENT,
                                                     device=device).to(device)
     else:
-        vit_pretrained = ViTModel.from_pretrained('google/vit-base-patch16-224').to(device)
-        model = SegViT(vit_model=vit_pretrained, 
-                            image_size=224, 
-                            patch_size=16, 
-                            dim=768,
-                            n_classes=2,
-                            device=device)
+        raise ValueError("Model is not implemented yet.")
         
     optimizer = optim.Adam(model.parameters(), lr = args.lr)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
